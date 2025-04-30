@@ -1,0 +1,178 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model Agenda {
+  id_agenda Int      @id @default(autoincrement())
+  tarea     String   @db.VarChar(200)
+  fecha     DateTime @db.Date
+  hora      DateTime @db.Time
+  imagen    Bytes
+
+  @@map("agenda")
+}
+
+model Contacto {
+  id_contacto      Int     @id @default(autoincrement())
+  nombre           String  @db.VarChar(200)
+  genero           String  @db.Char(1)
+  celular          String  @db.Char(9)
+  documento        String  @db.VarChar(22)
+  nrodocumento     Int     @db.Int
+  correo           String? @db.VarChar(200)
+  departamento     String  @db.VarChar(100)
+  provincia        String  @db.VarChar(100)
+  distrito         String  @db.VarChar(100)
+  urbanizacion     String? @db.VarChar(100)
+  direccion        String? @db.VarChar(100)
+  usuario_insertor String? @db.VarChar(255)
+
+  propiedades Propiedades[]
+  contratos   Contrato[]
+
+  @@map("contacto")
+}
+
+model Contrato {
+  id_contrato      Int     @id @default(autoincrement())
+  id_contacto      Int
+  id_propiedad     Int
+  departamento     String  @db.VarChar(100)
+  provincia        String  @db.VarChar(100)
+  distrito         String  @db.VarChar(100)
+  direccion        String  @db.VarChar(100)
+  exclusividad     String  @db.VarChar(100)
+  usuario_insertor String? @db.VarChar(255)
+
+  contacto   Contacto    @relation(fields: [id_contacto], references: [id_contacto])
+  propiedad  Propiedades @relation(fields: [id_propiedad], references: [id_propiedad])
+
+  @@map("contrato")
+}
+
+model CP {
+  id            Int      @id @default(autoincrement())
+  id_propiedad  Int
+  nombre        String   @db.VarChar(255)
+  archivo       Bytes
+  tipo_archivo  String   @db.VarChar(100)
+  fecha_subida  DateTime @default(now()) @db.Timestamp
+
+  propiedad     Propiedades @relation(fields: [id_propiedad], references: [id_propiedad])
+
+  @@map("cp")
+}
+
+model DNI {
+  id            Int       @id @default(autoincrement())
+  id_propiedad  Int?
+  nombre        String?   @db.VarChar(255)
+  archivo       Bytes?
+  tipo_archivo  String?   @db.VarChar(100)
+  fecha_subida  DateTime  @default(now()) @db.Timestamp
+
+  propiedad     Propiedades? @relation(fields: [id_propiedad], references: [id_propiedad])
+
+  @@map("dni")
+}
+
+model HR {
+  id            Int       @id @default(autoincrement())
+  id_propiedad  Int?
+  nombre        String?   @db.VarChar(255)
+  archivo       Bytes?
+  tipo_archivo  String?   @db.VarChar(100)
+  fecha_subida  DateTime  @default(now()) @db.Timestamp
+
+  propiedad     Propiedades? @relation(fields: [id_propiedad], references: [id_propiedad])
+
+  @@map("hr")
+}
+
+model Images {
+  id_imagen     Int     @id @default(autoincrement())
+  id_propiedad  Int
+  image_data    Bytes
+
+  propiedad     Propiedades @relation(fields: [id_propiedad], references: [id_propiedad])
+
+  @@map("images")
+}
+
+model Propiedades {
+  id_propiedad    Int       @id @default(autoincrement())
+  id_contacto     Int
+  titulo          String    @db.VarChar(500)
+  descripcion     String    @db.VarChar(2000)
+  tipo_pro        String    @db.VarChar(200)
+  subtipo         String    @db.VarChar(200)
+  antiguedad      Int       @db.Int
+  area_terreno    Decimal   @db.Decimal(8, 2)
+  area_construida Decimal   @db.Decimal(8, 2)
+  tipo_negocio    String    @db.VarChar(200)
+  precio          Decimal   @db.Decimal(10, 2)
+  departamento    String    @db.VarChar(200)
+  provincia       String    @db.VarChar(200)
+  distrito        String    @db.VarChar(200)
+  urbanizacion    String    @db.VarChar(200)
+  direccion       String    @db.VarChar(200)
+  pisos           Int       @db.Int
+  dormitorios     Int       @db.Int
+  baños           Int       @db.Int
+  cocheras        Int       @db.Int
+  mantenimiento   Int       @db.Int
+  cocinas         Int       @db.Int
+  medbaños        Int       @db.Int
+  ascensor        String    @db.VarChar(3)
+  terrazas        Int       @db.Int
+  estado          String    @db.VarChar(200)
+  usuario_insertor String    @db.VarChar(255)
+  fecha_creacion  DateTime? @db.DateTime
+
+  contacto  Contacto  @relation(fields: [id_contacto], references: [id_contacto])
+  imagenes  Images[]
+  contratos Contrato[]
+  cp        CP[]
+  dni       DNI[]
+  hr        HR[]
+  pu        PU[]
+
+  @@map("propiedades")
+}
+
+model PU {
+  id            Int       @id @default(autoincrement())
+  id_propiedad  Int?
+  nombre        String?   @db.VarChar(255)
+  archivo       Bytes?
+  tipo_archivo  String?   @db.VarChar(100)
+  fecha_subida  DateTime  @default(now()) @db.Timestamp
+
+  propiedad     Propiedades? @relation(fields: [id_propiedad], references: [id_propiedad])
+
+  @@map("pu")
+}
+
+model Usuarios {
+  user_id          Int     @id @default(autoincrement())
+  usuario          String  @db.VarChar(200)
+  contraseña       String  @db.VarChar(255)
+  nombres          String  @db.VarChar(100)
+  apellidos        String  @db.VarChar(100)
+  tipo_documento   String  @db.VarChar(21)
+  numero_documento String  @db.VarChar(20)
+  ruc              String  @db.VarChar(20)
+  genero           String  @db.Char(1)
+  imagen           Bytes?
+  celular          String  @db.VarChar(9)
+  departamento     String  @db.VarChar(50)
+  provincia        String  @db.VarChar(50)
+  distrito         String  @db.VarChar(50)
+
+  @@map("usuarios")
+}
