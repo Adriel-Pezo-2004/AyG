@@ -1,4 +1,3 @@
-// app/api/auth/logout/route.ts
 import { NextResponse } from 'next/server'
 
 export async function POST() {
@@ -8,9 +7,10 @@ export async function POST() {
   )
 
   response.cookies.set({
-    name: 'authToken',
+    name: 'user_id', 
     value: '',
-    maxAge: -1 // Expira inmediatamente
+    maxAge: -1,
+    path: "/"
   })
 
   return response

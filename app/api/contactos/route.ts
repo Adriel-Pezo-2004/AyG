@@ -19,6 +19,11 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const data = await request.json()
+    const user_id = request.cookies.get("user_id")?.value || null
+    if (!user_id) {
+      return NextResponse.json({ error: "No autorizado" }, { status: 401 })
+    }
+
     const contacto = await prisma.contacto.create({
       data: {
         nombre: data.nombre,
@@ -32,7 +37,7 @@ export async function POST(request: NextRequest) {
         distrito: data.distrito,
         urbanizacion: data.urbanizacion,
         direccion: data.direccion,
-        usuario_insertor: data.usuario_insertor,
+        usuario_insertor: user_id,
       },
     })
     return NextResponse.json(contacto, { status: 201 })

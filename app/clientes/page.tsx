@@ -1,53 +1,66 @@
+"use client"
+
+import { useEffect, useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Users, Search, Pencil, Trash2, FileDown } from "lucide-react"
+import { Users, Search, Pencil, Trash2 } from "lucide-react"
 import Link from "next/link"
+import { Input } from "@/components/ui/input"
 
 export default function ClientesPage() {
-  const clientes = [
-    {
-      id: "1",
-      nombre: "Luis Ramírez",
-      email: "luis.ramirez@gmail.com",
-      telefono: "+51 987 654 321",
-      tipo: "Comprador",
-      fechaRegistro: "15/04/2024",
-    },
-    {
-      id: "2",
-      nombre: "Sofía Torres",
-      email: "sofia.torres@gmail.com",
-      telefono: "+51 987 123 456",
-      tipo: "Vendedor",
-      fechaRegistro: "10/04/2024",
-    },
-    {
-      id: "3",
-      nombre: "Miguel Ángel Castro",
-      email: "miguel.castro@gmail.com",
-      telefono: "+51 999 888 777",
-      tipo: "Arrendatario",
-      fechaRegistro: "05/04/2024",
-    },
-    {
-      id: "4",
-      nombre: "Carmen Vega",
-      email: "carmen.vega@gmail.com",
-      telefono: "+51 955 444 333",
-      tipo: "Arrendador",
-      fechaRegistro: "01/04/2024",
-    },
-    {
-      id: "5",
-      nombre: "Jorge Mendoza",
-      email: "jorge.mendoza@gmail.com",
-      telefono: "+51 933 222 111",
-      tipo: "Comprador",
-      fechaRegistro: "25/03/2024",
-    },
-  ]
+  interface Cliente {
+    id_contacto: number
+    nombre: string
+    genero: string
+    celular: string
+    documento: string
+    nrodocumento: number
+    correo?: string
+    departamento: string
+    provincia: string
+    distrito: string
+    urbanizacion?: string
+    direccion?: string
+    usuario_insertor?: string
+  }
+
+  const [clientes, setClientes] = useState<Cliente[]>([])
+
+  useEffect(() => {
+    const fetchClientes = async () => {
+      try {
+        const res = await fetch("/api/contactos")
+        if (!res.ok) throw new Error("Error al cargar clientes")
+        const data = await res.json()
+        setClientes(data)
+      } catch (error) {
+        console.error("Error al obtener clientes:", error)
+      }
+    }
+
+    fetchClientes()
+  }, [])
+
+  const handleDelete = async (id: number) => {
+    try {
+      const confirmDelete = window.confirm("¿Estás seguro de eliminar este cliente?")
+      if (!confirmDelete) return
+
+      const response = await fetch(`/api/contactos/${id}`, {
+        method: 'DELETE'
+      })
+
+      if (response.ok) {
+        setClientes(prev => prev.filter(c => c.id_contacto !== id))
+      } else {
+        const errorData = await response.json()
+        throw new Error(errorData.error || "Error al eliminar")
+      }
+    } catch (error) {
+      console.error("Error al eliminar:", error)
+    }
+  }
 
   return (
     <div className="flex-1 space-y-4 p-8 pt-6">
@@ -59,10 +72,6 @@ export default function ClientesPage() {
               <Users className="mr-2 h-4 w-4" />
               Nuevo Cliente
             </Link>
-          </Button>
-          <Button variant="outline">
-            <FileDown className="mr-2 h-4 w-4" />
-            Exportar PDF
           </Button>
         </div>
       </div>
@@ -84,29 +93,41 @@ export default function ClientesPage() {
             <TableHeader>
               <TableRow>
                 <TableHead>Nombre</TableHead>
+                <TableHead>Género</TableHead>
+                <TableHead>Celular</TableHead>
+                <TableHead>Documento</TableHead>
+                <TableHead>N° Documento</TableHead>
                 <TableHead>Email</TableHead>
-                <TableHead>Teléfono</TableHead>
-                <TableHead>Tipo</TableHead>
-                <TableHead>Fecha Registro</TableHead>
+                <TableHead>Departamento</TableHead>
+                <TableHead>Provincia</TableHead>
+                <TableHead>Distrito</TableHead>
                 <TableHead className="text-right">Acciones</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {clientes.map((cliente) => (
-                <TableRow key={cliente.id}>
+                <TableRow key={cliente.id_contacto}>
                   <TableCell className="font-medium">{cliente.nombre}</TableCell>
-                  <TableCell>{cliente.email}</TableCell>
-                  <TableCell>{cliente.telefono}</TableCell>
-                  <TableCell>{cliente.tipo}</TableCell>
-                  <TableCell>{cliente.fechaRegistro}</TableCell>
-                  <TableCell className="text-right">
+                  <TableCell>{cliente.genero}</TableCell>
+                  <TableCell>{cliente.celular}</TableCell>
+                  <TableCell>{cliente.documento}</TableCell>
+                  <TableCell>{cliente.nrodocumento}</TableCell>
+                  <TableCell>{cliente.correo || "-"}</TableCell>
+                  <TableCell>{cliente.departamento}</TableCell>
+                  <TableCell>{cliente.provincia}</TableCell>
+                  <TableCell>{cliente.distrito}</TableCell>
+                  <TableCell className="text-right space-x-1">
                     <Button variant="ghost" size="icon" asChild>
-                      <Link href={`/clientes/editar/${cliente.id}`}>
+                      <Link href={`/clientes/editar/${cliente.id_contacto}`}>
                         <Pencil className="h-4 w-4" />
                       </Link>
                     </Button>
-                    <Button variant="ghost" size="icon">
-                      <Trash2 className="h-4 w-4" />
+                    <Button 
+                      variant="ghost" 
+                      size="icon"
+                      onClick={() => handleDelete(cliente.id_contacto)}
+                    >
+                      <Trash2 className="h-4 w-4 text-red-500" />
                     </Button>
                   </TableCell>
                 </TableRow>

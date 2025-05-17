@@ -1,7 +1,5 @@
 "use client"
 
-import type React from "react"
-
 import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
@@ -9,23 +7,57 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Textarea } from "@/components/ui/textarea"
 import { ArrowLeft, Save } from "lucide-react"
 import Link from "next/link"
 
 export default function NuevoClientePage() {
   const router = useRouter()
   const [isLoading, setIsLoading] = useState(false)
+  const [formData, setFormData] = useState({
+    nombre: "",
+    genero: "",
+    celular: "",
+    documento: "",
+    nrodocumento: "",
+    correo: "",
+    departamento: "",
+    provincia: "",
+    distrito: "",
+    urbanizacion: "",
+    direccion: "",
+  })
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    const { id, value } = e.target
+    setFormData((prev) => ({ ...prev, [id]: value }))
+  }
+
+  const handleSelect = (field: string, value: string) => {
+    setFormData((prev) => ({ ...prev, [field]: value }))
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsLoading(true)
-
-    // Simulación de guardado
-    setTimeout(() => {
+    try {
+      const res = await fetch("/api/contactos", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          ...formData,
+          nrodocumento: Number(formData.nrodocumento) || 0,
+        }),
+      })
+      if (res.ok) {
+        router.push("/clientes")
+      } else {
+        throw new Error("Error al crear cliente")
+      }
+    } catch (error) {
+      console.error("Error al crear cliente:", error)
+    } finally {
       setIsLoading(false)
-      router.push("/clientes")
-    }, 1500)
+    }
   }
 
   return (
@@ -51,70 +83,64 @@ export default function NuevoClientePage() {
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <div className="space-y-2">
                 <Label htmlFor="nombre">Nombre Completo</Label>
-                <Input id="nombre" placeholder="Nombre completo" required />
+                <Input id="nombre" value={formData.nombre} onChange={handleChange} required />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="email">Correo Electrónico</Label>
-                <Input id="email" type="email" placeholder="correo@ejemplo.com" required />
+                <Label htmlFor="genero">Género</Label>
+                <Select value={formData.genero} onValueChange={v => handleSelect("genero", v)}>
+                  <SelectTrigger id="genero">
+                    <SelectValue placeholder="Seleccionar género" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="M">Masculino</SelectItem>
+                    <SelectItem value="F">Femenino</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
               <div className="space-y-2">
-                <Label htmlFor="telefono">Teléfono</Label>
-                <Input id="telefono" placeholder="+51 999 999 999" required />
+                <Label htmlFor="celular">Celular</Label>
+                <Input id="celular" value={formData.celular} onChange={handleChange} maxLength={9} required />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="dni">DNI / RUC</Label>
-                <Input id="dni" placeholder="Número de documento" required />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="direccion">Dirección</Label>
-                <Input id="direccion" placeholder="Dirección completa" />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="tipo">Tipo de Cliente</Label>
-                <Select>
-                  <SelectTrigger id="tipo">
+                <Label htmlFor="documento">Tipo de Documento</Label>
+                <Select value={formData.documento} onValueChange={v => handleSelect("documento", v)}>
+                  <SelectTrigger id="documento">
                     <SelectValue placeholder="Seleccionar tipo" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="comprador">Comprador</SelectItem>
-                    <SelectItem value="vendedor">Vendedor</SelectItem>
-                    <SelectItem value="arrendatario">Arrendatario</SelectItem>
-                    <SelectItem value="arrendador">Arrendador</SelectItem>
+                    <SelectItem value="DNI">DNI</SelectItem>
+                    <SelectItem value="RUC">RUC</SelectItem>
+                    <SelectItem value="CE">Carnet Extranjería</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
               <div className="space-y-2">
-                <Label htmlFor="origen">Origen</Label>
-                <Select>
-                  <SelectTrigger id="origen">
-                    <SelectValue placeholder="Seleccionar origen" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="referido">Referido</SelectItem>
-                    <SelectItem value="web">Sitio Web</SelectItem>
-                    <SelectItem value="redes">Redes Sociales</SelectItem>
-                    <SelectItem value="publicidad">Publicidad</SelectItem>
-                    <SelectItem value="otro">Otro</SelectItem>
-                  </SelectContent>
-                </Select>
+                <Label htmlFor="nrodocumento">N° Documento</Label>
+                <Input id="nrodocumento" value={formData.nrodocumento} onChange={handleChange} required />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="asesor">Asesor Asignado</Label>
-                <Select>
-                  <SelectTrigger id="asesor">
-                    <SelectValue placeholder="Seleccionar asesor" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="1">Carlos Mendoza</SelectItem>
-                    <SelectItem value="2">María López</SelectItem>
-                    <SelectItem value="3">Juan Pérez</SelectItem>
-                    <SelectItem value="4">Ana García</SelectItem>
-                  </SelectContent>
-                </Select>
+                <Label htmlFor="correo">Correo Electrónico</Label>
+                <Input id="correo" type="email" value={formData.correo} onChange={handleChange} />
               </div>
-              <div className="space-y-2 sm:col-span-2">
-                <Label htmlFor="observaciones">Observaciones</Label>
-                <Textarea id="observaciones" placeholder="Observaciones adicionales" />
+              <div className="space-y-2">
+                <Label htmlFor="departamento">Departamento</Label>
+                <Input id="departamento" value={formData.departamento} onChange={handleChange} required />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="provincia">Provincia</Label>
+                <Input id="provincia" value={formData.provincia} onChange={handleChange} required />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="distrito">Distrito</Label>
+                <Input id="distrito" value={formData.distrito} onChange={handleChange} required />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="urbanizacion">Urbanización</Label>
+                <Input id="urbanizacion" value={formData.urbanizacion} onChange={handleChange} />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="direccion">Dirección</Label>
+                <Input id="direccion" value={formData.direccion} onChange={handleChange} />
               </div>
             </div>
           </CardContent>
