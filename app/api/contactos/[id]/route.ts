@@ -1,9 +1,8 @@
 import { type NextRequest, NextResponse } from "next/server"
 import prisma from "@/lib/prisma"
-
-export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
+export async function GET(request: NextRequest) {
   try {
-    const id = Number.parseInt(params.id)
+    const id = Number.parseInt(request.nextUrl.pathname.split("/").pop()!)
     const contacto = await prisma.contacto.findUnique({
       where: { id_contacto: id },
       include: {
@@ -23,9 +22,9 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
   }
 }
 
-export async function PUT(request: NextRequest, { params }: { params: { id: string } }) {
+export async function PUT(request: NextRequest) {
   try {
-    const id = Number.parseInt(params.id)
+    const id = Number.parseInt(request.nextUrl.pathname.split("/").pop()!)
     const data = await request.json()
 
     const contacto = await prisma.contacto.update({
@@ -55,7 +54,7 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
 
 export async function DELETE(request: NextRequest, { params }: { params: { id: string } }) {
   try {
-    const id = Number.parseInt(params.id)
+    const id = Number.parseInt(request.nextUrl.pathname.split("/").pop()!)
 
     // Verificar si hay propiedades o contratos relacionados
     const contacto = await prisma.contacto.findUnique({

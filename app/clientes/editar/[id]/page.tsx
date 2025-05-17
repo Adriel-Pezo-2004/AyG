@@ -1,43 +1,91 @@
 "use client"
 
-import type React from "react"
-
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Textarea } from "@/components/ui/textarea"
 import { ArrowLeft, Save } from "lucide-react"
 import Link from "next/link"
 
 export default function EditarClientePage({ params }: { params: { id: string } }) {
   const router = useRouter()
   const [isLoading, setIsLoading] = useState(false)
-  const [cliente, setCliente] = useState({
-    id: params.id,
-    nombre: "Luis Ramírez",
-    email: "luis.ramirez@gmail.com",
-    telefono: "+51 987 654 321",
-    dni: "12345678",
-    direccion: "Av. Ejército 123, Cayma, Arequipa",
-    tipo: "comprador",
-    origen: "referido",
-    asesor: "1",
-    observaciones: "Cliente interesado en departamentos en Cayma o Yanahuara.",
+  const [formData, setFormData] = useState({
+    nombre: "",
+    genero: "",
+    celular: "",
+    documento: "",
+    nrodocumento: "",
+    correo: "",
+    departamento: "",
+    provincia: "",
+    distrito: "",
+    urbanizacion: "",
+    direccion: "",
   })
+
+  // Cargar datos del cliente al montar
+  useEffect(() => {
+    const fetchCliente = async () => {
+      try {
+        const res = await fetch(`/api/contactos/${params.id}`)
+        if (res.ok) {
+          const data = await res.json()
+          setFormData({
+            nombre: data.nombre || "",
+            genero: data.genero || "",
+            celular: data.celular || "",
+            documento: data.documento || "",
+            nrodocumento: data.nrodocumento?.toString() || "",
+            correo: data.correo || "",
+            departamento: data.departamento || "",
+            provincia: data.provincia || "",
+            distrito: data.distrito || "",
+            urbanizacion: data.urbanizacion || "",
+            direccion: data.direccion || "",
+          })
+        }
+      } catch (error) {
+        console.error("Error al cargar cliente:", error)
+      }
+    }
+    fetchCliente()
+  }, [params.id])
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    const { id, value } = e.target
+    setFormData((prev) => ({ ...prev, [id]: value }))
+  }
+
+  const handleSelect = (field: string, value: string) => {
+    setFormData((prev) => ({ ...prev, [field]: value }))
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsLoading(true)
-
-    // Simulación de guardado
-    setTimeout(() => {
+    try {
+      const res = await fetch(`/api/contactos/${params.id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          ...formData,
+          nrodocumento: Number(formData.nrodocumento) || 0,
+        }),
+      })
+      if (res.ok) {
+        router.push("/clientes")
+      } else {
+        throw new Error("Error al actualizar cliente")
+      }
+    } catch (error) {
+      console.error("Error al actualizar cliente:", error)
+    } finally {
       setIsLoading(false)
-      router.push("/clientes")
-    }, 1500)
+    }
   }
 
   return (
@@ -63,105 +111,64 @@ export default function EditarClientePage({ params }: { params: { id: string } }
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <div className="space-y-2">
                 <Label htmlFor="nombre">Nombre Completo</Label>
-                <Input
-                  id="nombre"
-                  placeholder="Nombre completo"
-                  value={cliente.nombre}
-                  onChange={(e) => setCliente({ ...cliente, nombre: e.target.value })}
-                  required
-                />
+                <Input id="nombre" value={formData.nombre} onChange={handleChange} required />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="email">Correo Electrónico</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  placeholder="correo@ejemplo.com"
-                  value={cliente.email}
-                  onChange={(e) => setCliente({ ...cliente, email: e.target.value })}
-                  required
-                />
+                <Label htmlFor="genero">Género</Label>
+                <Select value={formData.genero} onValueChange={v => handleSelect("genero", v)}>
+                  <SelectTrigger id="genero">
+                    <SelectValue placeholder="Seleccionar género" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="M">Masculino</SelectItem>
+                    <SelectItem value="F">Femenino</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
               <div className="space-y-2">
-                <Label htmlFor="telefono">Teléfono</Label>
-                <Input
-                  id="telefono"
-                  placeholder="+51 999 999 999"
-                  value={cliente.telefono}
-                  onChange={(e) => setCliente({ ...cliente, telefono: e.target.value })}
-                  required
-                />
+                <Label htmlFor="celular">Celular</Label>
+                <Input id="celular" value={formData.celular} onChange={handleChange} maxLength={9} required />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="dni">DNI / RUC</Label>
-                <Input
-                  id="dni"
-                  placeholder="Número de documento"
-                  value={cliente.dni}
-                  onChange={(e) => setCliente({ ...cliente, dni: e.target.value })}
-                  required
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="direccion">Dirección</Label>
-                <Input
-                  id="direccion"
-                  placeholder="Dirección completa"
-                  value={cliente.direccion}
-                  onChange={(e) => setCliente({ ...cliente, direccion: e.target.value })}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="tipo">Tipo de Cliente</Label>
-                <Select value={cliente.tipo} onValueChange={(value) => setCliente({ ...cliente, tipo: value })}>
-                  <SelectTrigger id="tipo">
+                <Label htmlFor="documento">Tipo de Documento</Label>
+                <Select value={formData.documento} onValueChange={v => handleSelect("documento", v)}>
+                  <SelectTrigger id="documento">
                     <SelectValue placeholder="Seleccionar tipo" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="comprador">Comprador</SelectItem>
-                    <SelectItem value="vendedor">Vendedor</SelectItem>
-                    <SelectItem value="arrendatario">Arrendatario</SelectItem>
-                    <SelectItem value="arrendador">Arrendador</SelectItem>
+                    <SelectItem value="DNI">DNI</SelectItem>
+                    <SelectItem value="RUC">RUC</SelectItem>
+                    <SelectItem value="CE">Carnet Extranjería</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
               <div className="space-y-2">
-                <Label htmlFor="origen">Origen</Label>
-                <Select value={cliente.origen} onValueChange={(value) => setCliente({ ...cliente, origen: value })}>
-                  <SelectTrigger id="origen">
-                    <SelectValue placeholder="Seleccionar origen" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="referido">Referido</SelectItem>
-                    <SelectItem value="web">Sitio Web</SelectItem>
-                    <SelectItem value="redes">Redes Sociales</SelectItem>
-                    <SelectItem value="publicidad">Publicidad</SelectItem>
-                    <SelectItem value="otro">Otro</SelectItem>
-                  </SelectContent>
-                </Select>
+                <Label htmlFor="nrodocumento">N° Documento</Label>
+                <Input id="nrodocumento" value={formData.nrodocumento} onChange={handleChange} required />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="asesor">Asesor Asignado</Label>
-                <Select value={cliente.asesor} onValueChange={(value) => setCliente({ ...cliente, asesor: value })}>
-                  <SelectTrigger id="asesor">
-                    <SelectValue placeholder="Seleccionar asesor" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="1">Carlos Mendoza</SelectItem>
-                    <SelectItem value="2">María López</SelectItem>
-                    <SelectItem value="3">Juan Pérez</SelectItem>
-                    <SelectItem value="4">Ana García</SelectItem>
-                  </SelectContent>
-                </Select>
+                <Label htmlFor="correo">Correo Electrónico</Label>
+                <Input id="correo" type="email" value={formData.correo} onChange={handleChange} />
               </div>
-              <div className="space-y-2 sm:col-span-2">
-                <Label htmlFor="observaciones">Observaciones</Label>
-                <Textarea
-                  id="observaciones"
-                  placeholder="Observaciones adicionales"
-                  value={cliente.observaciones}
-                  onChange={(e) => setCliente({ ...cliente, observaciones: e.target.value })}
-                />
+              <div className="space-y-2">
+                <Label htmlFor="departamento">Departamento</Label>
+                <Input id="departamento" value={formData.departamento} onChange={handleChange} required />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="provincia">Provincia</Label>
+                <Input id="provincia" value={formData.provincia} onChange={handleChange} required />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="distrito">Distrito</Label>
+                <Input id="distrito" value={formData.distrito} onChange={handleChange} required />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="urbanizacion">Urbanización</Label>
+                <Input id="urbanizacion" value={formData.urbanizacion} onChange={handleChange} />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="direccion">Dirección</Label>
+                <Input id="direccion" value={formData.direccion} onChange={handleChange} />
               </div>
             </div>
           </CardContent>
