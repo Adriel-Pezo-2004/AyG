@@ -1,49 +1,98 @@
 "use client"
 
-import type React from "react"
-
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Textarea } from "@/components/ui/textarea"
 import { ArrowLeft, Save, CalendarIcon } from "lucide-react"
 import Link from "next/link"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { Calendar } from "@/components/ui/calendar"
-import { format } from "date-fns"
+import { format, parseISO } from "date-fns"
 import { es } from "date-fns/locale"
 import { cn } from "@/lib/utils"
 
 export default function EditarEventoPage({ params }: { params: { id: string } }) {
   const router = useRouter()
   const [isLoading, setIsLoading] = useState(false)
-  const [evento, setEvento] = useState({
-    id: params.id,
-    titulo: "Visita a departamento en Cayma",
-    tipo: "visita",
-    cliente: "1",
-    asesor: "1",
-    propiedad: "1",
-    estado: "pendiente",
-    fecha: new Date(2024, 4, 20),
+  const [evento, setEvento] = useState<{
+    titulo: string
+    tipo: string
+    fecha: Date | null
+    hora: string
+    estado: string
+  }>({
+    titulo: "",
+    tipo: "",
+    fecha: null,
     hora: "10:00",
-    descripcion: "Visita programada para mostrar el departamento al cliente interesado.",
-    recordatorio: "30min",
+    estado: "",
   })
+
+  // Cargar datos del evento al montar
+  useEffect(() => {
+    const fetchEvento = async () => {
+      try {
+        const res = await fetch(`/api/eventos/${params.id}`)
+        if (res.ok) {
+          const data = await res.json()
+
+          // Parsear la fecha correctamente
+          const fecha = data.fecha ? parseISO(data.fecha) : null
+
+          // Formatear la hora correctamente (HH:mm)
+          const hora = data.hora || "10:00"
+
+          setEvento({
+            titulo: data.titulo || "",
+            tipo: data.tipo || "",
+            fecha: fecha,
+            hora: hora,
+            estado: data.estado || "",
+          })
+        }
+      } catch (error) {
+        console.error("Error al cargar evento:", error)
+      }
+    }
+    fetchEvento()
+  }, [params.id])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsLoading(true)
+    try {
+      if (!evento.fecha) throw new Error("Debe seleccionar una fecha")
 
-    // Simulación de guardado
-    setTimeout(() => {
+      // Preparar los datos para enviar
+      const dataToSend = {
+        titulo: evento.titulo,
+        tipo: evento.tipo,
+        fecha: format(evento.fecha, "yyyy-MM-dd"),
+        hora: evento.hora,
+        estado: evento.estado,
+      }
+
+      const res = await fetch(`/api/eventos/${params.id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(dataToSend),
+      })
+
+      if (res.ok) {
+        router.push("/eventos")
+      } else {
+        const errorData = await res.json()
+        throw new Error(errorData.error || "Error al actualizar evento")
+      }
+    } catch (error) {
+      alert(error instanceof Error ? error.message : "Error al actualizar evento")
+    } finally {
       setIsLoading(false)
-      router.push("/eventos")
-    }, 1500)
+    }
   }
 
   return (
@@ -94,51 +143,6 @@ export default function EditarEventoPage({ params }: { params: { id: string } })
                 </Select>
               </div>
               <div className="space-y-2">
-                <Label htmlFor="cliente">Cliente</Label>
-                <Select value={evento.cliente} onValueChange={(value) => setEvento({ ...evento, cliente: value })}>
-                  <SelectTrigger id="cliente">
-                    <SelectValue placeholder="Seleccionar cliente" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="1">Luis Ramírez</SelectItem>
-                    <SelectItem value="2">Sofía Torres</SelectItem>
-                    <SelectItem value="3">Miguel Ángel Castro</SelectItem>
-                    <SelectItem value="4">Carmen Vega</SelectItem>
-                    <SelectItem value="5">Jorge Mendoza</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="asesor">Asesor</Label>
-                <Select value={evento.asesor} onValueChange={(value) => setEvento({ ...evento, asesor: value })}>
-                  <SelectTrigger id="asesor">
-                    <SelectValue placeholder="Seleccionar asesor" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="1">Carlos Mendoza</SelectItem>
-                    <SelectItem value="2">María López</SelectItem>
-                    <SelectItem value="3">Juan Pérez</SelectItem>
-                    <SelectItem value="4">Ana García</SelectItem>
-                    <SelectItem value="5">Roberto Sánchez</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="propiedad">Propiedad (Opcional)</Label>
-                <Select value={evento.propiedad} onValueChange={(value) => setEvento({ ...evento, propiedad: value })}>
-                  <SelectTrigger id="propiedad">
-                    <SelectValue placeholder="Seleccionar propiedad" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="1">Av. Javier Prado 2340, San Isidro</SelectItem>
-                    <SelectItem value="2">Jr. Salaverry 234, Miraflores</SelectItem>
-                    <SelectItem value="3">Calle Los Pinos 567, La Molina</SelectItem>
-                    <SelectItem value="4">Av. Arequipa 890, Lince</SelectItem>
-                    <SelectItem value="5">Calle Schell 452, Miraflores</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2">
                 <Label htmlFor="estado">Estado</Label>
                 <Select value={evento.estado} onValueChange={(value) => setEvento({ ...evento, estado: value })}>
                   <SelectTrigger id="estado">
@@ -159,7 +163,7 @@ export default function EditarEventoPage({ params }: { params: { id: string } })
                       variant={"outline"}
                       className={cn(
                         "w-full justify-start text-left font-normal",
-                        !evento.fecha && "text-muted-foreground",
+                        !evento.fecha && "text-muted-foreground"
                       )}
                     >
                       <CalendarIcon className="mr-2 h-4 w-4" />
@@ -173,7 +177,7 @@ export default function EditarEventoPage({ params }: { params: { id: string } })
                   <PopoverContent className="w-auto p-0">
                     <Calendar
                       mode="single"
-                      selected={evento.fecha}
+                      selected={evento.fecha ?? undefined}
                       onSelect={(date) => date && setEvento({ ...evento, fecha: date })}
                       initialFocus
                       locale={es}
@@ -183,43 +187,14 @@ export default function EditarEventoPage({ params }: { params: { id: string } })
               </div>
               <div className="space-y-2">
                 <Label htmlFor="hora">Hora</Label>
-                <div className="flex items-center">
-                  <Input
-                    id="hora"
-                    type="time"
-                    value={evento.hora}
-                    onChange={(e) => setEvento({ ...evento, hora: e.target.value })}
-                    className="w-full"
-                    required
-                  />
-                </div>
-              </div>
-              <div className="space-y-2 sm:col-span-2">
-                <Label htmlFor="descripcion">Descripción</Label>
-                <Textarea
-                  id="descripcion"
-                  placeholder="Descripción detallada del evento"
-                  value={evento.descripcion}
-                  onChange={(e) => setEvento({ ...evento, descripcion: e.target.value })}
+                <Input
+                  id="hora"
+                  type="time"
+                  value={evento.hora}
+                  onChange={(e) => setEvento({ ...evento, hora: e.target.value })}
+                  className="w-full"
+                  required
                 />
-              </div>
-              <div className="space-y-2 sm:col-span-2">
-                <Label htmlFor="recordatorio">Recordatorio</Label>
-                <Select
-                  value={evento.recordatorio}
-                  onValueChange={(value) => setEvento({ ...evento, recordatorio: value })}
-                >
-                  <SelectTrigger id="recordatorio">
-                    <SelectValue placeholder="Seleccionar recordatorio" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="ninguno">Ninguno</SelectItem>
-                    <SelectItem value="15min">15 minutos antes</SelectItem>
-                    <SelectItem value="30min">30 minutos antes</SelectItem>
-                    <SelectItem value="1hora">1 hora antes</SelectItem>
-                    <SelectItem value="1dia">1 día antes</SelectItem>
-                  </SelectContent>
-                </Select>
               </div>
             </div>
           </CardContent>

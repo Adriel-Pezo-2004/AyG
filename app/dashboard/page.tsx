@@ -22,13 +22,11 @@ export default function DashboardPage() {
 
   const handleDateFilterChange = (filter: { type: string; dates?: Date[] }) => {
     setDateFilter(filter)
-    // Aquí se implementaría la lógica para filtrar los datos según la fecha
     console.log("Date filter changed:", filter)
   }
 
   const handleLocationFilterChange = (filter: { region: string; province: string; district: string }) => {
     setLocationFilter(filter)
-    // Aquí se implementaría la lógica para filtrar los datos según la ubicación
     console.log("Location filter changed:", filter)
   }
 

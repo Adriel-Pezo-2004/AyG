@@ -1,64 +1,80 @@
+"use client"
+
+import { useEffect, useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Search, Pencil, Trash2, Plus } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import Link from "next/link"
+import { Input } from "@/components/ui/input"
 
 export default function EventosPage() {
-  const eventos = [
-    {
-      id: "1",
-      titulo: "Visita a departamento en Cayma",
-      tipo: "Visita",
-      cliente: "Luis Ramírez",
-      asesor: "Carlos Mendoza",
-      fecha: "20/05/2024",
-      hora: "10:00 AM",
-      estado: "Pendiente",
-    },
-    {
-      id: "2",
-      titulo: "Firma de contrato de alquiler",
-      tipo: "Firma",
-      cliente: "Sofía Torres",
-      asesor: "María López",
-      fecha: "22/05/2024",
-      hora: "11:30 AM",
-      estado: "Confirmado",
-    },
-    {
-      id: "3",
-      titulo: "Entrega de llaves",
-      tipo: "Entrega",
-      cliente: "Miguel Ángel Castro",
-      asesor: "Juan Pérez",
-      fecha: "25/05/2024",
-      hora: "09:00 AM",
-      estado: "Pendiente",
-    },
-    {
-      id: "4",
-      titulo: "Tasación de propiedad",
-      tipo: "Tasación",
-      cliente: "Carmen Vega",
-      asesor: "Ana García",
-      fecha: "27/05/2024",
-      hora: "03:00 PM",
-      estado: "Confirmado",
-    },
-    {
-      id: "5",
-      titulo: "Reunión con propietario",
-      tipo: "Reunión",
-      cliente: "Jorge Mendoza",
-      asesor: "Roberto Sánchez",
-      fecha: "30/05/2024",
-      hora: "04:30 PM",
-      estado: "Cancelado",
-    },
-  ]
+  interface Evento {
+    id_evento: number
+    titulo: string
+    tipo: string
+    fecha: string // ISO string
+    hora: string  // ISO string o "HH:mm:ss"
+    estado: string
+  }
+
+  const [eventos, setEventos] = useState<Evento[]>([])
+
+  useEffect(() => {
+    const fetchEventos = async () => {
+      try {
+        const res = await fetch("/api/eventos")
+        if (!res.ok) throw new Error("Error al cargar eventos")
+        const data = await res.json()
+        setEventos(data)
+      } catch (error) {
+        console.error("Error al obtener eventos:", error)
+      }
+    }
+
+    fetchEventos()
+  }, [])
+
+  const handleDelete = async (id: number) => {
+    try {
+      const confirmDelete = window.confirm("¿Estás seguro de eliminar este evento?")
+      if (!confirmDelete) return
+
+      const response = await fetch(`/api/eventos/${id}`, {
+        method: 'DELETE'
+      })
+
+      if (response.ok) {
+        setEventos(prev => prev.filter(e => e.id_evento !== id))
+      } else {
+        const errorData = await response.json()
+        throw new Error(errorData.error || "Error al eliminar")
+      }
+    } catch (error) {
+      console.error("Error al eliminar:", error)
+    }
+  }
+
+  // Helper para mostrar fecha y hora legibles
+  const formatFecha = (fecha: string) => {
+    try {
+      return new Date(fecha).toLocaleDateString()
+    } catch {
+      return fecha
+    }
+  }
+  const formatHora = (hora: string) => {
+    try {
+      // Si es string tipo "2024-05-25T09:00:00.000Z"
+      const d = new Date(hora)
+      if (!isNaN(d.getTime())) return d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
+      // Si es "09:00:00"
+      return hora.slice(0, 5)
+    } catch {
+      return hora
+    }
+  }
 
   return (
     <div className="flex-1 space-y-4 p-8 pt-6">
@@ -92,8 +108,6 @@ export default function EventosPage() {
               <TableRow>
                 <TableHead>Título</TableHead>
                 <TableHead>Tipo</TableHead>
-                <TableHead>Cliente</TableHead>
-                <TableHead>Asesor</TableHead>
                 <TableHead>Fecha</TableHead>
                 <TableHead>Hora</TableHead>
                 <TableHead>Estado</TableHead>
@@ -102,13 +116,11 @@ export default function EventosPage() {
             </TableHeader>
             <TableBody>
               {eventos.map((evento) => (
-                <TableRow key={evento.id}>
+                <TableRow key={evento.id_evento}>
                   <TableCell className="font-medium">{evento.titulo}</TableCell>
                   <TableCell>{evento.tipo}</TableCell>
-                  <TableCell>{evento.cliente}</TableCell>
-                  <TableCell>{evento.asesor}</TableCell>
-                  <TableCell>{evento.fecha}</TableCell>
-                  <TableCell>{evento.hora}</TableCell>
+                  <TableCell>{formatFecha(evento.fecha)}</TableCell>
+                  <TableCell>{formatHora(evento.hora)}</TableCell>
                   <TableCell>
                     <Badge
                       variant={
@@ -123,14 +135,18 @@ export default function EventosPage() {
                       {evento.estado}
                     </Badge>
                   </TableCell>
-                  <TableCell className="text-right">
+                  <TableCell className="text-right space-x-1">
                     <Button variant="ghost" size="icon" asChild>
-                      <Link href={`/eventos/editar/${evento.id}`}>
+                      <Link href={`/eventos/editar/${evento.id_evento}`}>
                         <Pencil className="h-4 w-4" />
                       </Link>
                     </Button>
-                    <Button variant="ghost" size="icon">
-                      <Trash2 className="h-4 w-4" />
+                    <Button 
+                      variant="ghost" 
+                      size="icon"
+                      onClick={() => handleDelete(evento.id_evento)}
+                    >
+                      <Trash2 className="h-4 w-4 text-red-500" />
                     </Button>
                   </TableCell>
                 </TableRow>

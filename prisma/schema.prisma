@@ -17,6 +17,17 @@ model Agenda {
   @@map("agenda")
 }
 
+model Eventos {
+  id_evento Int      @id @default(autoincrement())
+  titulo    String   @db.VarChar(200)
+  tipo      String   @db.VarChar(40)
+  fecha     DateTime @db.Date
+  hora      DateTime @db.Time
+  estado    String   @db.VarChar(20)
+
+  @@map("eventos")
+}
+
 model Contacto {
   id_contacto      Int     @id @default(autoincrement())
   nombre           String  @db.VarChar(200)
@@ -166,7 +177,7 @@ model Usuarios {
   apellidos        String  @db.VarChar(100)
   tipo_documento   String  @db.VarChar(21)
   numero_documento String  @db.VarChar(20)
-  ruc              String  @db.VarChar(20)
+  ruc              String?  @db.VarChar(20) 
   genero           String  @db.Char(1)
   imagen           Bytes?
   celular          String  @db.VarChar(9)
