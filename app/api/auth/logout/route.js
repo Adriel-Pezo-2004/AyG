@@ -6,11 +6,11 @@ export async function POST() {
     { status: 200 }
   )
 
-  response.cookies.set({
-    name: 'user_id', 
-    value: '',
-    maxAge: -1,
-    path: "/"
+  response.cookies.set('user_id', '', {
+    httpOnly: true,
+    path: '/',
+    maxAge: 0,
+    sameSite: 'lax',
   })
 
   return response

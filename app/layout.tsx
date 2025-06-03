@@ -4,7 +4,6 @@ import type React from "react";
 import { SidebarProvider, SidebarTrigger, SidebarInset } from "@/components/ui/sidebar";
 import { AdminSidebar } from "@/components/admin-sidebar";
 import { ThemeProvider } from "@/components/theme-provider";
-import { usePathname } from "next/navigation";
 import "./globals.css";
 
 export default function RootLayout({
@@ -12,7 +11,8 @@ export default function RootLayout({
 }: {
   children: React.ReactNode
 }) {
-  const pathname = usePathname();
+  // Oculta el sidebar en login y logout
+  const pathname = typeof window !== "undefined" ? window.location.pathname : "";
   const hideSidebar = pathname === "/login" || pathname === "/logout";
 
   return (
