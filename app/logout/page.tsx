@@ -9,7 +9,7 @@ export default function LogoutPage() {
   useEffect(() => {
     const logout = async () => {
       await fetch("/api/auth/logout", { method: "POST" })
-      router.replace("/login")
+      setTimeout(() => router.replace("/login"), 100) // pequeño delay
     }
     logout()
   }, [router])
